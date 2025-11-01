@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { BlockData, GameState, Controls } from '@/types/game';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import {
   createPlatformsFromBlocks,
   initializePlayer,
@@ -14,9 +15,34 @@ import {
 interface GameCanvasProps {
   blocks: BlockData[];
   onGameOver: (score: number, time: number) => void;
+  xConnected?: boolean;
+  xUsername?: string;
+  xProfilePic?: string;
 }
 
-// Helper: draw rounded rectangle (filled and/or stroked)
+const CRYPTO_MEMES = [
+  '🚀 TO THE MOON!',
+  '💎 DIAMOND HANDS',
+  '📈 WAGMI',
+  '🔥 GM EVERYONE',
+  '⚡ LFG!',
+  '🌙 MOON SOON',
+  '💪 HODL STRONG',
+  '🎯 BULLISH AF',
+  '🦾 STAYING STRONG',
+  '✨ WEN LAMBO',
+];
+
+// Helper to format timestamp
+function formatTimeAgo(timestamp: string): string {
+  const seconds = Math.floor(Date.now() / 1000 - Number(timestamp));
+  
+  if (seconds < 60) return `${seconds}s ago`;
+  if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
+  if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
+  return `${Math.floor(seconds / 86400)}d ago`;
+}
+
 function roundRect(
   ctx: CanvasRenderingContext2D,
   x: number,
@@ -44,7 +70,7 @@ function roundRect(
   if (stroke) ctx.stroke();
 }
 
-export default function GameCanvas({ blocks, onGameOver }: GameCanvasProps) {
+export default function GameCanvas({ blocks, onGameOver, xConnected, xUsername, xProfilePic }: GameCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [gameState, setGameState] = useState<GameState | null>(null);
   const [controls, setControls] = useState<Controls>({
@@ -52,8 +78,108 @@ export default function GameCanvas({ blocks, onGameOver }: GameCanvasProps) {
     right: false,
     jump: false,
   });
+  const [showMeme, setShowMeme] = useState(false);
+  const [currentMeme, setCurrentMeme] = useState('');
   const animationFrameRef = useRef<number>(0);
   const startTimeRef = useRef<number>(Date.now());
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const profileImageRef = useRef<HTMLImageElement | null>(null);
+  const gameOverSoundPlayedRef = useRef(false);
+
+  // Load profile picture
+  useEffect(() => {
+    if (xConnected && xProfilePic) {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.src = xProfilePic;
+      img.onload = () => {
+        profileImageRef.current = img;
+      };
+    }
+  }, [xConnected, xProfilePic]);
+
+  // Audio functions
+  const playJumpSound = useCallback(() => {
+    if (!audioContextRef.current) {
+      audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+    }
+    
+    const audioContext = audioContextRef.current;
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+    
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+    
+    oscillator.frequency.setValueAtTime(400, audioContext.currentTime);
+    oscillator.frequency.exponentialRampToValueAtTime(200, audioContext.currentTime + 0.1);
+    
+    gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+    
+    oscillator.start(audioContext.currentTime);
+    oscillator.stop(audioContext.currentTime + 0.1);
+  }, []);
+
+  const playLandSound = useCallback(() => {
+    if (!audioContextRef.current) {
+      audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+    }
+    
+    const audioContext = audioContextRef.current;
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+    
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+    
+    oscillator.frequency.setValueAtTime(150, audioContext.currentTime);
+    oscillator.frequency.exponentialRampToValueAtTime(100, audioContext.currentTime + 0.05);
+    
+    gainNode.gain.setValueAtTime(0.2, audioContext.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.05);
+    
+    oscillator.start(audioContext.currentTime);
+    oscillator.stop(audioContext.currentTime + 0.05);
+  }, []);
+
+  const playGameOverSound = useCallback(() => {
+    if (!audioContextRef.current) {
+      audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+    }
+    
+    const audioContext = audioContextRef.current;
+    
+    // Create a descending tone sequence for "defeat" sound
+    const times = [0, 0.15, 0.3, 0.45];
+    const frequencies = [300, 250, 200, 150];
+    
+    times.forEach((time, index) => {
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      
+      oscillator.frequency.setValueAtTime(frequencies[index], audioContext.currentTime + time);
+      oscillator.frequency.exponentialRampToValueAtTime(frequencies[index] * 0.8, audioContext.currentTime + time + 0.15);
+      
+      gainNode.gain.setValueAtTime(0, audioContext.currentTime + time);
+      gainNode.gain.linearRampToValueAtTime(0.3, audioContext.currentTime + time + 0.02);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + time + 0.15);
+      
+      oscillator.start(audioContext.currentTime + time);
+      oscillator.stop(audioContext.currentTime + time + 0.15);
+    });
+  }, []);
+
+  // Show random crypto meme
+  const showRandomMeme = useCallback(() => {
+    const randomMeme = CRYPTO_MEMES[Math.floor(Math.random() * CRYPTO_MEMES.length)];
+    setCurrentMeme(randomMeme);
+    setShowMeme(true);
+    setTimeout(() => setShowMeme(false), 2000);
+  }, []);
 
   // Initialize game
   useEffect(() => {
@@ -71,6 +197,7 @@ export default function GameCanvas({ blocks, onGameOver }: GameCanvasProps) {
     });
     
     startTimeRef.current = Date.now();
+    gameOverSoundPlayedRef.current = false;
   }, [blocks]);
 
   // Keyboard controls
@@ -84,7 +211,12 @@ export default function GameCanvas({ blocks, onGameOver }: GameCanvasProps) {
       }
       if (e.key === ' ' || e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') {
         e.preventDefault();
-        setControls(prev => ({ ...prev, jump: true }));
+        setControls(prev => {
+          if (!prev.jump) {
+            playJumpSound();
+          }
+          return { ...prev, jump: true };
+        });
       }
     };
 
@@ -107,7 +239,10 @@ export default function GameCanvas({ blocks, onGameOver }: GameCanvasProps) {
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
     };
-  }, []);
+  }, [playJumpSound]);
+
+  // Track previous grounded state for landing sound
+  const prevGroundedRef = useRef(false);
 
   // Game loop
   useEffect(() => {
@@ -120,16 +255,30 @@ export default function GameCanvas({ blocks, onGameOver }: GameCanvasProps) {
     if (!ctx) return;
 
     const gameLoop = () => {
-      // Update game state
       const newPlayer = updatePlayer(gameState.player, controls, gameState.platforms);
       const newScore = calculateScore(newPlayer, gameState.platforms);
       const newCameraX = getCameraX(newPlayer, canvas.width);
       const newTime = Math.floor((Date.now() - startTimeRef.current) / 1000);
 
+      // Play landing sound
+      if (!prevGroundedRef.current && newPlayer.isGrounded) {
+        playLandSound();
+      }
+      prevGroundedRef.current = newPlayer.isGrounded;
+
+      // Show crypto meme occasionally
+      if (Math.random() < 0.002) {
+        showRandomMeme();
+      }
+
       // Check game over
       const isGameOver = checkGameOver(newPlayer, canvas.height);
 
       if (isGameOver) {
+        if (!gameOverSoundPlayedRef.current) {
+          playGameOverSound();
+          gameOverSoundPlayedRef.current = true;
+        }
         setGameState(prev => prev ? { ...prev, isGameOver: true } : null);
         onGameOver(newScore, newTime);
         return;
@@ -143,8 +292,18 @@ export default function GameCanvas({ blocks, onGameOver }: GameCanvasProps) {
         cameraX: newCameraX,
       });
 
-      // Render
-      renderGame(ctx, canvas, gameState, newPlayer, newCameraX, newScore, newTime);
+      renderGame(
+        ctx,
+        canvas,
+        gameState,
+        newPlayer,
+        newCameraX,
+        newScore,
+        newTime,
+        xConnected || false,
+        xUsername || '',
+        profileImageRef.current
+      );
 
       animationFrameRef.current = requestAnimationFrame(gameLoop);
     };
@@ -156,16 +315,60 @@ export default function GameCanvas({ blocks, onGameOver }: GameCanvasProps) {
         cancelAnimationFrame(animationFrameRef.current);
       }
     };
-  }, [gameState, controls, onGameOver]);
+  }, [gameState, controls, onGameOver, playLandSound, playGameOverSound, showRandomMeme, xConnected, xUsername]);
 
   return (
-    <canvas
-      ref={canvasRef}
-      width={1200}
-      height={600}
-      className="w-full h-full rounded-lg"
-      style={{ imageRendering: 'pixelated' }}
-    />
+    <div className="relative">
+      {/* HUD */}
+      <div className="mb-4 flex justify-between items-center gap-4">
+        {xConnected && (
+          <div className="flex items-center gap-3 px-4 py-2 bg-white/90 backdrop-blur rounded-lg border border-slate-200 shadow-sm">
+            <Avatar className="w-10 h-10 border-2 border-purple-300">
+              <AvatarImage src={xProfilePic} />
+              <AvatarFallback className="bg-slate-700 text-white">
+                {xUsername?.charAt(0).toUpperCase()}
+              </AvatarFallback>
+            </Avatar>
+            <div>
+              <div className="text-xs text-slate-500 font-medium">Ninja Runner</div>
+              <div className="text-sm font-bold text-slate-900">@{xUsername}</div>
+            </div>
+          </div>
+        )}
+        
+        <div className="flex gap-3 ml-auto">
+          <div className="px-4 py-2 bg-white/90 backdrop-blur rounded-lg border border-slate-200 shadow-sm">
+            <div className="text-xs text-slate-500 font-medium">Score</div>
+            <div className="text-xl font-bold text-slate-700">{gameState?.score || 0}</div>
+          </div>
+          
+          <div className="px-4 py-2 bg-white/90 backdrop-blur rounded-lg border border-slate-200 shadow-sm">
+            <div className="text-xs text-slate-500 font-medium">Time</div>
+            <div className="text-lg font-bold text-slate-700">
+              {Math.floor((gameState?.time || 0) / 60)}:{((gameState?.time || 0) % 60).toString().padStart(2, '0')}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Canvas */}
+      <div className="relative rounded-lg overflow-hidden shadow-2xl">
+        <canvas
+          ref={canvasRef}
+          width={1200}
+          height={600}
+          className="w-full h-full"
+          style={{ imageRendering: 'auto' }}
+        />
+        
+        {/* Crypto Meme Overlay */}
+        {showMeme && (
+          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-slate-900/90 text-white px-8 py-4 rounded-lg text-3xl font-bold animate-pulse pointer-events-none">
+            {currentMeme}
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
 
@@ -176,80 +379,91 @@ function renderGame(
   player: any,
   cameraX: number,
   score: number,
-  time: number
+  time: number,
+  xConnected: boolean,
+  xUsername: string,
+  profileImage: HTMLImageElement | null
 ) {
-  // Clear canvas with subtle light background
-  // Background gradient inspired by katana-banner colors
+  // Clear with gradient background
   const bgGrad = ctx.createLinearGradient(0, 0, 0, canvas.height);
-  bgGrad.addColorStop(0, '#f8fafc');
-  bgGrad.addColorStop(1, '#eef2ff');
+  bgGrad.addColorStop(0, '#f1f5f9');
+  bgGrad.addColorStop(1, '#e2e8f0');
   ctx.fillStyle = bgGrad;
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  // Soft parallax shapes (very subtle hills) for visual depth
-  ctx.globalAlpha = 0.35;
-  ctx.fillStyle = '#e6eefb';
-  ctx.beginPath();
-  ctx.ellipse(canvas.width * 0.25 - (cameraX % 300), canvas.height - 30, 420, 80, 0, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.fillStyle = '#f1f5fb';
-  ctx.beginPath();
-  ctx.ellipse(canvas.width * 0.75 - (cameraX % 450), canvas.height - 18, 360, 70, 0, 0, Math.PI * 2);
-  ctx.fill();
+  // Subtle floating particles
+  ctx.globalAlpha = 0.3;
+  for (let i = 0; i < 30; i++) {
+    const particleX = (cameraX * 0.3 + i * 80) % canvas.width;
+    const particleY = 50 + Math.sin((cameraX + i * 50) * 0.02) * 40;
+    ctx.fillStyle = '#94a3b8';
+    ctx.beginPath();
+    ctx.arc(particleX, particleY, 2, 0, Math.PI * 2);
+    ctx.fill();
+  }
   ctx.globalAlpha = 1;
 
   ctx.save();
   ctx.translate(-cameraX, 0);
 
   // Draw platforms
-  gameState.platforms.forEach(platform => {
-    if (platform.x + platform.width > cameraX && platform.x < cameraX + canvas.width) {
+  gameState.platforms.forEach((platform) => {
+    if (
+      platform.x + platform.width > cameraX - 100 &&
+      platform.x < cameraX + canvas.width + 100
+    ) {
       // Platform shadow
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.07)';
-      ctx.fillRect(platform.x + 3, platform.y + 3, platform.width, platform.height);
+      ctx.shadowColor = 'rgba(0, 0, 0, 0.15)';
+      ctx.shadowBlur = 10;
+      ctx.shadowOffsetY = 4;
 
-      // Smoothly transition platform color from light blue through blue, purple, and subtle yellow
-      const palette = [
-        [224, 242, 254], // light blue (#e0f2fe)
-        [165, 180, 252], // blue (#a5b4fc)
-        [196, 181, 253], // purple (#c4b5fd)
-        [253, 224, 71],  // yellow (#fde047)
-      ];
-      const idx = gameState.platforms.indexOf(platform);
-      const t = (idx + cameraX / 600) / (gameState.platforms.length / 1.5);
-      // Interpolate between palette colors
-      const seg = Math.floor(t * (palette.length - 1));
-      const segT = (t * (palette.length - 1)) - seg;
-      const colorA = palette[seg] || palette[0];
-      const colorB = palette[seg + 1] || palette[palette.length - 1];
-      const r = Math.round(colorA[0] * (1 - segT) + colorB[0] * segT);
-      const g = Math.round(colorA[1] * (1 - segT) + colorB[1] * segT);
-      const b = Math.round(colorA[2] * (1 - segT) + colorB[2] * segT);
-      ctx.fillStyle = `rgb(${r},${g},${b})`;
-      ctx.fillRect(platform.x, platform.y, platform.width, platform.height);
+      // Platform gradient - subtle colors
+      const platGrad = ctx.createLinearGradient(
+        platform.x,
+        platform.y,
+        platform.x,
+        platform.y + platform.height
+      );
+      
+      if (platform.type === 'meme') {
+        platGrad.addColorStop(0, '#f59e0b');
+        platGrad.addColorStop(1, '#d97706');
+      } else {
+        platGrad.addColorStop(0, '#94a3b8');
+        platGrad.addColorStop(1, '#64748b');
+      }
+      
+      ctx.fillStyle = platGrad;
+      roundRect(ctx, platform.x, platform.y, platform.width, platform.height, 12, true, false);
+
+      ctx.shadowColor = 'transparent';
+      ctx.shadowBlur = 0;
+      ctx.shadowOffsetY = 0;
 
       // Platform border
-      ctx.strokeStyle = '#64748b';
-      ctx.lineWidth = 1.5;
-      ctx.strokeRect(platform.x, platform.y, platform.width, platform.height);
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+      ctx.lineWidth = 2;
+      roundRect(ctx, platform.x, platform.y, platform.width, platform.height, 12, false, true);
 
-      // Block info: show block number badge, gas and timestamp (subtle)
-      ctx.font = '11px monospace';
-      ctx.fillStyle = '#334155';
+      // Gas info and timestamp
+      const gasUsed = parseInt(platform.blockData.gasUsed);
+      const timeAgo = formatTimeAgo(platform.blockData.timestamp);
+      
       ctx.textAlign = 'center';
-      const gasUsed = parseInt(platform.blockData.gasUsed || '0');
-  // Block number may not be present in the typed BlockData - cast to any to safely access
-  const blockNum = ((platform.blockData as any).number as string) || ((platform.blockData as any).blockNumber as string) || '';
-      const blockTime = new Date(Number(platform.blockData.timestamp) * 1000);
-      const timeStr = `${blockTime.getHours().toString().padStart(2,'0')}:${blockTime.getMinutes().toString().padStart(2,'0')}`;
-
-  // Removed block number badge for cleaner look
-
-      // Gas and time under platform
-      ctx.textAlign = 'center';
+      ctx.font = 'bold 11px Arial';
       ctx.fillStyle = '#475569';
-      ctx.fillText(`Gas: ${gasUsed.toLocaleString()}`, platform.x + platform.width / 2, platform.y + platform.height + 16);
-      ctx.fillText(`Time: ${timeStr}`, platform.x + platform.width / 2, platform.y + platform.height + 32);
+      ctx.fillText(
+        `Gas: ${gasUsed.toLocaleString()}`,
+        platform.x + platform.width / 2,
+        platform.y + platform.height + 16
+      );
+      ctx.font = '10px Arial';
+      ctx.fillStyle = '#64748b';
+      ctx.fillText(
+        timeAgo,
+        platform.x + platform.width / 2,
+        platform.y + platform.height + 30
+      );
     }
   });
 
@@ -258,96 +472,108 @@ function renderGame(
   const ninjaY = player.y + player.height / 2;
   const ninjaRadius = player.width / 2;
 
-  // Head (dark gray)
+  // Shadow
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+  ctx.beginPath();
+  ctx.ellipse(ninjaX, ninjaY + ninjaRadius + 5, ninjaRadius * 0.8, ninjaRadius * 0.3, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Head circle
   ctx.fillStyle = '#334155';
   ctx.beginPath();
   ctx.arc(ninjaX, ninjaY, ninjaRadius, 0, Math.PI * 2);
   ctx.fill();
-  ctx.strokeStyle = '#64748b';
+  ctx.strokeStyle = '#475569';
   ctx.lineWidth = 2;
   ctx.stroke();
 
-  // Ninja band (yellow accent)
-  ctx.save();
-  ctx.beginPath();
-  ctx.arc(ninjaX, ninjaY, ninjaRadius * 0.85, Math.PI * 0.75, Math.PI * 1.25);
-  ctx.lineWidth = ninjaRadius * 0.35;
-  ctx.strokeStyle = '#facc15';
-  ctx.stroke();
-  ctx.restore();
+  // Profile picture overlay if X connected
+  if (xConnected && profileImage) {
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(ninjaX, ninjaY, ninjaRadius - 2, 0, Math.PI * 2);
+    ctx.clip();
+    
+    // Draw profile image to fill the circle
+    ctx.drawImage(
+      profileImage,
+      ninjaX - ninjaRadius,
+      ninjaY - ninjaRadius,
+      ninjaRadius * 2,
+      ninjaRadius * 2
+    );
+    ctx.restore();
+    
+    // Add subtle border around profile pic
+    ctx.strokeStyle = '#8b5cf6';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.arc(ninjaX, ninjaY, ninjaRadius - 1, 0, Math.PI * 2);
+    ctx.stroke();
+  }
 
-  // Katana (slung behind head) - subtle, stylized
+  // Headband
+  ctx.fillStyle = '#dc2626';
+  ctx.fillRect(ninjaX - ninjaRadius, ninjaY - ninjaRadius * 0.5, ninjaRadius * 2, 8);
+  
+  // Headband knot
+  ctx.beginPath();
+  ctx.arc(ninjaX + ninjaRadius + 4, ninjaY - ninjaRadius * 0.46, 4, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Eyes (only if no profile pic)
+  if (!xConnected || !profileImage) {
+    ctx.fillStyle = '#f8fafc';
+    ctx.beginPath();
+    ctx.arc(ninjaX - ninjaRadius * 0.35, ninjaY - ninjaRadius * 0.1, 4, 0, Math.PI * 2);
+    ctx.arc(ninjaX + ninjaRadius * 0.35, ninjaY - ninjaRadius * 0.1, 4, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = '#1e293b';
+    ctx.beginPath();
+    ctx.arc(ninjaX - ninjaRadius * 0.35, ninjaY - ninjaRadius * 0.1, 2, 0, Math.PI * 2);
+    ctx.arc(ninjaX + ninjaRadius * 0.35, ninjaY - ninjaRadius * 0.1, 2, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // Katana sword
   ctx.save();
   ctx.translate(ninjaX, ninjaY);
-  const angle = -0.45; // tilt up-left
-  ctx.rotate(angle);
-  const bladeLen = ninjaRadius * 2.8;
-  const bladeW = Math.max(3, ninjaRadius * 0.22);
-  // Blade (light metallic)
-  const bladeGrad = ctx.createLinearGradient(0, -bladeW / 2, bladeLen, bladeW / 2);
-  bladeGrad.addColorStop(0, '#e6eefb');
-  bladeGrad.addColorStop(0.5, '#f8fafc');
-  bladeGrad.addColorStop(1, '#dbe7ff');
+  ctx.rotate(-0.4);
+  
+  const bladeGrad = ctx.createLinearGradient(0, 0, 50, 0);
+  bladeGrad.addColorStop(0, '#cbd5e1');
+  bladeGrad.addColorStop(0.5, '#f1f5f9');
+  bladeGrad.addColorStop(1, '#e2e8f0');
   ctx.fillStyle = bladeGrad;
-  ctx.beginPath();
-  ctx.rect(-bladeLen * 0.25, -bladeW / 2, bladeLen, bladeW);
-  ctx.fill();
-  // Handle
-  ctx.fillStyle = '#334155';
-  ctx.fillRect(-bladeLen * 0.35 - 8, -bladeW / 2 - 4, 16, bladeW + 8);
-  // Small accent on handle
-  ctx.fillStyle = '#facc15';
-  ctx.fillRect(-bladeLen * 0.35 - 6, -bladeW / 2 + 2, 6, 6);
+  ctx.fillRect(10, -2, 50, 4);
+  
+  ctx.fillStyle = '#7c3aed';
+  ctx.fillRect(5, -4, 10, 8);
+  
+  ctx.fillStyle = '#fbbf24';
+  ctx.fillRect(14, -5, 3, 10);
+  
   ctx.restore();
 
-  // Torso (subtle) to give silhouette
-  ctx.fillStyle = '#334155';
+  // Arms
+  ctx.strokeStyle = '#334155';
+  ctx.lineWidth = 5;
+  ctx.lineCap = 'round';
   ctx.beginPath();
-  ctx.ellipse(ninjaX, ninjaY + ninjaRadius * 0.9, ninjaRadius * 0.7, ninjaRadius * 0.5, 0, 0, Math.PI * 2);
-  ctx.fill();
+  ctx.moveTo(ninjaX - ninjaRadius * 0.6, ninjaY + ninjaRadius * 0.3);
+  ctx.lineTo(ninjaX - ninjaRadius * 1.2, ninjaY + ninjaRadius * 0.8);
+  ctx.moveTo(ninjaX + ninjaRadius * 0.6, ninjaY + ninjaRadius * 0.3);
+  ctx.lineTo(ninjaX + ninjaRadius * 1.2, ninjaY + ninjaRadius * 0.6);
+  ctx.stroke();
 
-  // Eyes (white)
-  ctx.fillStyle = '#f8fafc';
+  // Legs
   ctx.beginPath();
-  ctx.ellipse(ninjaX - ninjaRadius * 0.35, ninjaY - ninjaRadius * 0.15, ninjaRadius * 0.18, ninjaRadius * 0.13, 0, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.beginPath();
-  ctx.ellipse(ninjaX + ninjaRadius * 0.35, ninjaY - ninjaRadius * 0.15, ninjaRadius * 0.18, ninjaRadius * 0.13, 0, 0, Math.PI * 2);
-  ctx.fill();
-
-  // Pupils (dark)
-  ctx.fillStyle = '#334155';
-  ctx.beginPath();
-  ctx.arc(ninjaX - ninjaRadius * 0.35, ninjaY - ninjaRadius * 0.15, ninjaRadius * 0.07, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.beginPath();
-  ctx.arc(ninjaX + ninjaRadius * 0.35, ninjaY - ninjaRadius * 0.15, ninjaRadius * 0.07, 0, Math.PI * 2);
-  ctx.fill();
+  ctx.moveTo(ninjaX - ninjaRadius * 0.3, ninjaY + ninjaRadius);
+  ctx.lineTo(ninjaX - ninjaRadius * 0.5, ninjaY + ninjaRadius * 1.8);
+  ctx.moveTo(ninjaX + ninjaRadius * 0.3, ninjaY + ninjaRadius);
+  ctx.lineTo(ninjaX + ninjaRadius * 0.5, ninjaY + ninjaRadius * 1.8);
+  ctx.stroke();
 
   ctx.restore();
-
-  // Draw UI overlay
-  ctx.fillStyle = 'rgba(255,255,255,0.95)';
-  ctx.fillRect(0, 0, canvas.width, 60);
-
-  // Score
-  ctx.font = 'bold 20px Arial';
-  ctx.fillStyle = '#334155';
-  ctx.textAlign = 'left';
-  ctx.fillText(`Score: ${score}`, 30, 30);
-
-  // Time
-  const minutes = Math.floor(time / 60);
-  const seconds = time % 60;
-  ctx.fillText(
-    `Time: ${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`,
-    30,
-    50
-  );
-
-  // Instructions hint
-  ctx.font = '14px Arial';
-  ctx.fillStyle = '#64748b';
-  ctx.textAlign = 'center';
-  ctx.fillText('Arrow Keys / WASD to move • SPACE to jump', canvas.width / 2, canvas.height - 20);
 }
