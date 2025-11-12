@@ -37,71 +37,71 @@ export default function GameOverModal({
   };
 
   return (
-    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-[#0c1a43]/85 backdrop-blur-lg flex items-center justify-center z-50 p-4">
       <div className="max-w-lg w-full mx-4 animate-in fade-in zoom-in duration-300">
-        <div className="rounded-2xl shadow-2xl bg-white p-8 border border-slate-200">
+        <div className="rounded-2xl shadow-2xl bg-gradient-to-br from-[#0b9aed]/20 to-[#0c1a43]/40 backdrop-blur-xl p-7 border border-[#aee6fc]/15">
           {/* Header */}
-          <div className="text-center mb-6">
+          <div className="text-center mb-5">
             {xConnected && xUsername && (
-              <h2 className="text-3xl font-bold text-slate-800 mb-1">
+              <h2 className="text-2xl font-light text-white mb-1">
                 @{xUsername},
               </h2>
             )}
-            <h1 className="text-4xl font-bold text-slate-800">
+            <h1 className="text-3xl font-semibold text-white tracking-tight">
               Epic Run, Ninja!
             </h1>
           </div>
 
           {/* Character Display */}
-          <div className="flex justify-center mb-6">
+          <div className="flex justify-center mb-5">
             <div className="relative">
-              <div className="w-40 h-40 bg-gradient-to-br from-purple-50 to-slate-100 rounded-2xl flex items-center justify-center shadow-lg">
+              <div className="w-32 h-32 bg-white/8 backdrop-blur-sm rounded-2xl flex items-center justify-center shadow-xl border border-[#aee6fc]/12">
                 {xConnected && xProfilePic ? (
                   <div className="relative">
-                    <Avatar className="w-32 h-32 border-4 border-purple-300">
+                    <Avatar className="w-28 h-28 border-3 border-[#F4FF00]/40">
                       <AvatarImage src={xProfilePic} />
-                      <AvatarFallback className="bg-slate-700 text-white text-3xl">
+                      <AvatarFallback className="bg-[#053b9a] text-white text-2xl">
                         {xUsername?.charAt(0).toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
                     {/* Ninja headband overlay */}
-                    <div className="absolute top-8 left-0 right-0 h-4 bg-red-500 rounded"></div>
+                    <div className="absolute top-7 left-0 right-0 h-3 bg-[#F4FF00] rounded shadow-sm"></div>
                   </div>
                 ) : (
-                  <div className="text-8xl">🥷</div>
+                  <div className="text-7xl">🥷</div>
                 )}
               </div>
             </div>
           </div>
 
           {/* Stats */}
-          <div className="bg-gradient-to-r from-slate-50 to-purple-50 rounded-xl p-6 mb-6 border border-slate-200">
+          <div className="bg-white/5 backdrop-blur-sm rounded-xl p-5 mb-5 border border-[#aee6fc]/10">
             <div className="grid grid-cols-3 gap-4 text-center">
               <div>
-                <p className="text-sm text-slate-600 font-medium mb-1">Track</p>
-                <p className="text-lg font-bold text-slate-800">Katana Arena</p>
+                <p className="text-xs text-white/60 font-light mb-1">Track</p>
+                <p className="text-sm font-semibold text-white">Katana Arena</p>
               </div>
               <div>
-                <p className="text-sm text-slate-600 font-medium mb-1">Final Time</p>
-                <p className="text-2xl font-bold text-slate-700">
+                <p className="text-xs text-white/60 font-light mb-1">Final Time</p>
+                <p className="text-xl font-semibold text-[#F4FF00]">
                   {minutes.toString().padStart(2, '0')}:{seconds.toString().padStart(2, '0')}
                 </p>
               </div>
               <div>
-                <p className="text-sm text-slate-600 font-medium mb-1">Score</p>
-                <p className="text-2xl font-bold text-slate-700">{score}</p>
+                <p className="text-xs text-white/60 font-light mb-1">Score</p>
+                <p className="text-xl font-semibold text-[#F4FF00]">{score}</p>
               </div>
             </div>
           </div>
 
-          {/* Buttons - Light and subtle */}
-          <div className="space-y-3">
+          {/* Buttons */}
+          <div className="space-y-2.5">
             <Button
               onClick={shareOnX}
               variant="outline"
-              className="w-full h-14 text-base font-semibold bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-300 transition-all"
+              className="w-full h-12 text-sm font-medium bg-white/5 hover:bg-white/10 text-white border border-[#aee6fc]/15 backdrop-blur-sm transition-all rounded-lg"
             >
-              <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24">
+              <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
               </svg>
               Share on X
@@ -109,14 +109,14 @@ export default function GameOverModal({
 
             <Button
               onClick={tradeOnKatana}
-              className="w-full h-14 text-base font-bold bg-amber-100 hover:bg-amber-200 text-amber-900 border border-amber-300 shadow-sm transition-all"
+              className="w-full h-12 text-sm font-semibold bg-[#F4FF00] hover:bg-[#FFF9B3] text-[#0c1a43] border-none shadow-lg hover:shadow-xl transition-all rounded-lg"
             >
               Trade on Katana
             </Button>
 
             <Button
               onClick={onPlayAgain}
-              className="w-full h-14 text-base font-bold bg-slate-200 hover:bg-slate-300 text-slate-800 border border-slate-400 shadow-sm transition-all"
+              className="w-full h-12 text-sm font-medium bg-white/5 hover:bg-white/10 text-white border border-[#aee6fc]/15 backdrop-blur-sm transition-all rounded-lg"
             >
               Play Again
             </Button>

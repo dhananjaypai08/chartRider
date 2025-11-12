@@ -33,7 +33,6 @@ const CRYPTO_MEMES = [
   '✨ WEN LAMBO',
 ];
 
-// Helper to format timestamp
 function formatTimeAgo(timestamp: string): string {
   const seconds = Math.floor(Date.now() / 1000 - Number(timestamp));
   
@@ -53,12 +52,7 @@ function roundRect(
   fill: boolean,
   stroke: boolean
 ) {
-  if (typeof radius === 'undefined') {
-    radius = 5;
-  }
-  if (typeof radius === 'number') {
-    radius = Math.min(radius, width / 2, height / 2);
-  }
+  radius = Math.min(radius, width / 2, height / 2);
   ctx.beginPath();
   ctx.moveTo(x + radius, y);
   ctx.arcTo(x + width, y, x + width, y + height, radius);
@@ -86,7 +80,6 @@ export default function GameCanvas({ blocks, onGameOver, xConnected, xUsername, 
   const profileImageRef = useRef<HTMLImageElement | null>(null);
   const gameOverSoundPlayedRef = useRef(false);
 
-  // Load profile picture
   useEffect(() => {
     if (xConnected && xProfilePic) {
       const img = new Image();
@@ -98,7 +91,6 @@ export default function GameCanvas({ blocks, onGameOver, xConnected, xUsername, 
     }
   }, [xConnected, xProfilePic]);
 
-  // Audio functions
   const playJumpSound = useCallback(() => {
     if (!audioContextRef.current) {
       audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
@@ -149,8 +141,6 @@ export default function GameCanvas({ blocks, onGameOver, xConnected, xUsername, 
     }
     
     const audioContext = audioContextRef.current;
-    
-    // Create a descending tone sequence for "defeat" sound
     const times = [0, 0.15, 0.3, 0.45];
     const frequencies = [300, 250, 200, 150];
     
@@ -173,7 +163,6 @@ export default function GameCanvas({ blocks, onGameOver, xConnected, xUsername, 
     });
   }, []);
 
-  // Show random crypto meme
   const showRandomMeme = useCallback(() => {
     const randomMeme = CRYPTO_MEMES[Math.floor(Math.random() * CRYPTO_MEMES.length)];
     setCurrentMeme(randomMeme);
@@ -181,7 +170,6 @@ export default function GameCanvas({ blocks, onGameOver, xConnected, xUsername, 
     setTimeout(() => setShowMeme(false), 2000);
   }, []);
 
-  // Initialize game
   useEffect(() => {
     const platforms = createPlatformsFromBlocks(blocks);
     const player = initializePlayer();
@@ -200,7 +188,6 @@ export default function GameCanvas({ blocks, onGameOver, xConnected, xUsername, 
     gameOverSoundPlayedRef.current = false;
   }, [blocks]);
 
-  // Keyboard controls
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') {
@@ -241,10 +228,8 @@ export default function GameCanvas({ blocks, onGameOver, xConnected, xUsername, 
     };
   }, [playJumpSound]);
 
-  // Track previous grounded state for landing sound
   const prevGroundedRef = useRef(false);
 
-  // Game loop
   useEffect(() => {
     if (!gameState || gameState.isGameOver) return;
 
@@ -260,18 +245,15 @@ export default function GameCanvas({ blocks, onGameOver, xConnected, xUsername, 
       const newCameraX = getCameraX(newPlayer, canvas.width);
       const newTime = Math.floor((Date.now() - startTimeRef.current) / 1000);
 
-      // Play landing sound
       if (!prevGroundedRef.current && newPlayer.isGrounded) {
         playLandSound();
       }
       prevGroundedRef.current = newPlayer.isGrounded;
 
-      // Show crypto meme occasionally
       if (Math.random() < 0.002) {
         showRandomMeme();
       }
 
-      // Check game over
       const isGameOver = checkGameOver(newPlayer, canvas.height);
 
       if (isGameOver) {
@@ -319,40 +301,40 @@ export default function GameCanvas({ blocks, onGameOver, xConnected, xUsername, 
 
   return (
     <div className="relative">
-      {/* HUD */}
+      {/* HUD - Sleek and Minimal */}
       <div className="mb-4 flex justify-between items-center gap-4">
         {xConnected && (
-          <div className="flex items-center gap-3 px-4 py-2 bg-white/90 backdrop-blur rounded-lg border border-slate-200 shadow-sm">
-            <Avatar className="w-10 h-10 border-2 border-purple-300">
+          <div className="flex items-center gap-3 px-4 py-2.5 bg-white/10 backdrop-blur-xl rounded-xl border border-white/20 shadow-lg">
+            <Avatar className="w-9 h-9 border-2 border-[#F4FF00]/50">
               <AvatarImage src={xProfilePic} />
-              <AvatarFallback className="bg-slate-700 text-white">
+              <AvatarFallback className="bg-[#2C5F8D] text-white text-sm">
                 {xUsername?.charAt(0).toUpperCase()}
               </AvatarFallback>
             </Avatar>
             <div>
-              <div className="text-xs text-slate-500 font-medium">Ninja Runner</div>
-              <div className="text-sm font-bold text-slate-900">@{xUsername}</div>
+              <div className="text-[10px] text-white/60 font-light uppercase tracking-wide">Rider</div>
+              <div className="text-sm font-medium text-white">@{xUsername}</div>
             </div>
           </div>
         )}
         
         <div className="flex gap-3 ml-auto">
-          <div className="px-4 py-2 bg-white/90 backdrop-blur rounded-lg border border-slate-200 shadow-sm">
-            <div className="text-xs text-slate-500 font-medium">Score</div>
-            <div className="text-xl font-bold text-slate-700">{gameState?.score || 0}</div>
+          <div className="px-5 py-2.5 bg-white/10 backdrop-blur-xl rounded-xl border border-white/20 shadow-lg">
+            <div className="text-[10px] text-white/60 font-light uppercase tracking-wide mb-0.5">Score</div>
+            <div className="text-2xl font-bold text-[#F4FF00] tabular-nums">{gameState?.score || 0}</div>
           </div>
           
-          <div className="px-4 py-2 bg-white/90 backdrop-blur rounded-lg border border-slate-200 shadow-sm">
-            <div className="text-xs text-slate-500 font-medium">Time</div>
-            <div className="text-lg font-bold text-slate-700">
+          <div className="px-5 py-2.5 bg-white/10 backdrop-blur-xl rounded-xl border border-white/20 shadow-lg">
+            <div className="text-[10px] text-white/60 font-light uppercase tracking-wide mb-0.5">Time</div>
+            <div className="text-xl font-bold text-white tabular-nums">
               {Math.floor((gameState?.time || 0) / 60)}:{((gameState?.time || 0) % 60).toString().padStart(2, '0')}
             </div>
           </div>
         </div>
       </div>
 
-      {/* Canvas */}
-      <div className="relative rounded-lg overflow-hidden shadow-2xl">
+      {/* Canvas - Professional Design */}
+      <div className="relative rounded-2xl overflow-hidden shadow-2xl border-2 border-white/20">
         <canvas
           ref={canvasRef}
           width={1200}
@@ -363,7 +345,7 @@ export default function GameCanvas({ blocks, onGameOver, xConnected, xUsername, 
         
         {/* Crypto Meme Overlay */}
         {showMeme && (
-          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-slate-900/90 text-white px-8 py-4 rounded-lg text-3xl font-bold animate-pulse pointer-events-none">
+          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-[#0E1633]/90 backdrop-blur-sm text-white px-8 py-4 rounded-2xl text-2xl font-bold animate-pulse pointer-events-none border border-[#F4FF00]/30">
             {currentMeme}
           </div>
         )}
@@ -384,21 +366,22 @@ function renderGame(
   xUsername: string,
   profileImage: HTMLImageElement | null
 ) {
-  // Clear with gradient background
+  // Professional gradient background
   const bgGrad = ctx.createLinearGradient(0, 0, 0, canvas.height);
-  bgGrad.addColorStop(0, '#f1f5f9');
-  bgGrad.addColorStop(1, '#e2e8f0');
+  bgGrad.addColorStop(0, '#5B99C2');
+  bgGrad.addColorStop(0.5, '#4A7FA7');
+  bgGrad.addColorStop(1, '#2C5F8D');
   ctx.fillStyle = bgGrad;
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
   // Subtle floating particles
-  ctx.globalAlpha = 0.3;
-  for (let i = 0; i < 30; i++) {
-    const particleX = (cameraX * 0.3 + i * 80) % canvas.width;
-    const particleY = 50 + Math.sin((cameraX + i * 50) * 0.02) * 40;
-    ctx.fillStyle = '#94a3b8';
+  ctx.globalAlpha = 0.15;
+  for (let i = 0; i < 40; i++) {
+    const particleX = (cameraX * 0.2 + i * 60) % canvas.width;
+    const particleY = 30 + Math.sin((cameraX + i * 40) * 0.015) * 30;
+    ctx.fillStyle = '#FFFFFF';
     ctx.beginPath();
-    ctx.arc(particleX, particleY, 2, 0, Math.PI * 2);
+    ctx.arc(particleX, particleY, 1.5, 0, Math.PI * 2);
     ctx.fill();
   }
   ctx.globalAlpha = 1;
@@ -406,18 +389,18 @@ function renderGame(
   ctx.save();
   ctx.translate(-cameraX, 0);
 
-  // Draw platforms
+  // Draw platforms - sleek and modern
   gameState.platforms.forEach((platform) => {
     if (
       platform.x + platform.width > cameraX - 100 &&
       platform.x < cameraX + canvas.width + 100
     ) {
       // Platform shadow
-      ctx.shadowColor = 'rgba(0, 0, 0, 0.15)';
-      ctx.shadowBlur = 10;
-      ctx.shadowOffsetY = 4;
+      ctx.shadowColor = 'rgba(0, 0, 0, 0.25)';
+      ctx.shadowBlur = 15;
+      ctx.shadowOffsetY = 5;
 
-      // Platform gradient - subtle colors
+      // Platform gradient
       const platGrad = ctx.createLinearGradient(
         platform.x,
         platform.y,
@@ -426,15 +409,17 @@ function renderGame(
       );
       
       if (platform.type === 'meme') {
-        platGrad.addColorStop(0, '#f59e0b');
-        platGrad.addColorStop(1, '#d97706');
+        // Yellow accent for special platforms
+        platGrad.addColorStop(0, '#F4FF00');
+        platGrad.addColorStop(1, '#E0E800');
       } else {
-        platGrad.addColorStop(0, '#94a3b8');
-        platGrad.addColorStop(1, '#64748b');
+        // White/glass platforms
+        platGrad.addColorStop(0, 'rgba(255, 255, 255, 0.25)');
+        platGrad.addColorStop(1, 'rgba(255, 255, 255, 0.15)');
       }
       
       ctx.fillStyle = platGrad;
-      roundRect(ctx, platform.x, platform.y, platform.width, platform.height, 12, true, false);
+      roundRect(ctx, platform.x, platform.y, platform.width, platform.height, 8, true, false);
 
       ctx.shadowColor = 'transparent';
       ctx.shadowBlur = 0;
@@ -443,58 +428,49 @@ function renderGame(
       // Platform border
       ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
       ctx.lineWidth = 2;
-      roundRect(ctx, platform.x, platform.y, platform.width, platform.height, 12, false, true);
+      roundRect(ctx, platform.x, platform.y, platform.width, platform.height, 8, false, true);
 
-      // Gas info and timestamp
+      // Minimalist data display
       const gasUsed = parseInt(platform.blockData.gasUsed);
       const timeAgo = formatTimeAgo(platform.blockData.timestamp);
       
       ctx.textAlign = 'center';
-      ctx.font = 'bold 11px Arial';
-      ctx.fillStyle = '#475569';
+      ctx.font = '500 10px Inter, system-ui, sans-serif';
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
       ctx.fillText(
-        `Gas: ${gasUsed.toLocaleString()}`,
+        `${gasUsed.toLocaleString()} gas`,
         platform.x + platform.width / 2,
-        platform.y + platform.height + 16
+        platform.y + platform.height + 14
       );
-      ctx.font = '10px Arial';
-      ctx.fillStyle = '#64748b';
+      ctx.font = '400 9px Inter, system-ui, sans-serif';
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
       ctx.fillText(
         timeAgo,
         platform.x + platform.width / 2,
-        platform.y + platform.height + 30
+        platform.y + platform.height + 26
       );
     }
   });
 
-  // Draw ninja character
+  // Draw ninja character - sleeker design
   const ninjaX = player.x + player.width / 2;
   const ninjaY = player.y + player.height / 2;
   const ninjaRadius = player.width / 2;
 
-  // Shadow
-  ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+  // Character shadow
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.25)';
   ctx.beginPath();
-  ctx.ellipse(ninjaX, ninjaY + ninjaRadius + 5, ninjaRadius * 0.8, ninjaRadius * 0.3, 0, 0, Math.PI * 2);
+  ctx.ellipse(ninjaX, ninjaY + ninjaRadius + 5, ninjaRadius * 0.9, ninjaRadius * 0.3, 0, 0, Math.PI * 2);
   ctx.fill();
 
-  // Head circle
-  ctx.fillStyle = '#334155';
-  ctx.beginPath();
-  ctx.arc(ninjaX, ninjaY, ninjaRadius, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.strokeStyle = '#475569';
-  ctx.lineWidth = 2;
-  ctx.stroke();
-
-  // Profile picture overlay if X connected
+  // Character body
   if (xConnected && profileImage) {
+    // Profile picture
     ctx.save();
     ctx.beginPath();
-    ctx.arc(ninjaX, ninjaY, ninjaRadius - 2, 0, Math.PI * 2);
+    ctx.arc(ninjaX, ninjaY, ninjaRadius, 0, Math.PI * 2);
     ctx.clip();
     
-    // Draw profile image to fill the circle
     ctx.drawImage(
       profileImage,
       ninjaX - ninjaRadius,
@@ -504,75 +480,52 @@ function renderGame(
     );
     ctx.restore();
     
-    // Add subtle border around profile pic
-    ctx.strokeStyle = '#8b5cf6';
+    // Yellow border
+    ctx.strokeStyle = '#F4FF00';
     ctx.lineWidth = 3;
     ctx.beginPath();
-    ctx.arc(ninjaX, ninjaY, ninjaRadius - 1, 0, Math.PI * 2);
+    ctx.arc(ninjaX, ninjaY, ninjaRadius, 0, Math.PI * 2);
     ctx.stroke();
+  } else {
+    // Default ninja
+    const charGrad = ctx.createRadialGradient(ninjaX, ninjaY, 0, ninjaX, ninjaY, ninjaRadius);
+    charGrad.addColorStop(0, '#1A4971');
+    charGrad.addColorStop(1, '#0E1633');
+    ctx.fillStyle = charGrad;
+    ctx.beginPath();
+    ctx.arc(ninjaX, ninjaY, ninjaRadius, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Eyes
+    ctx.fillStyle = '#FFFFFF';
+    ctx.beginPath();
+    ctx.arc(ninjaX - ninjaRadius * 0.3, ninjaY - ninjaRadius * 0.1, 3, 0, Math.PI * 2);
+    ctx.arc(ninjaX + ninjaRadius * 0.3, ninjaY - ninjaRadius * 0.1, 3, 0, Math.PI * 2);
+    ctx.fill();
   }
 
-  // Headband
-  ctx.fillStyle = '#dc2626';
-  ctx.fillRect(ninjaX - ninjaRadius, ninjaY - ninjaRadius * 0.5, ninjaRadius * 2, 8);
+  // Yellow headband
+  ctx.fillStyle = '#F4FF00';
+  ctx.fillRect(ninjaX - ninjaRadius, ninjaY - ninjaRadius * 0.5, ninjaRadius * 2, 6);
   
   // Headband knot
   ctx.beginPath();
-  ctx.arc(ninjaX + ninjaRadius + 4, ninjaY - ninjaRadius * 0.46, 4, 0, Math.PI * 2);
+  ctx.arc(ninjaX + ninjaRadius + 3, ninjaY - ninjaRadius * 0.47, 3, 0, Math.PI * 2);
   ctx.fill();
 
-  // Eyes (only if no profile pic)
-  if (!xConnected || !profileImage) {
-    ctx.fillStyle = '#f8fafc';
-    ctx.beginPath();
-    ctx.arc(ninjaX - ninjaRadius * 0.35, ninjaY - ninjaRadius * 0.1, 4, 0, Math.PI * 2);
-    ctx.arc(ninjaX + ninjaRadius * 0.35, ninjaY - ninjaRadius * 0.1, 4, 0, Math.PI * 2);
-    ctx.fill();
-
-    ctx.fillStyle = '#1e293b';
-    ctx.beginPath();
-    ctx.arc(ninjaX - ninjaRadius * 0.35, ninjaY - ninjaRadius * 0.1, 2, 0, Math.PI * 2);
-    ctx.arc(ninjaX + ninjaRadius * 0.35, ninjaY - ninjaRadius * 0.1, 2, 0, Math.PI * 2);
-    ctx.fill();
-  }
-
-  // Katana sword
-  ctx.save();
-  ctx.translate(ninjaX, ninjaY);
-  ctx.rotate(-0.4);
-  
-  const bladeGrad = ctx.createLinearGradient(0, 0, 50, 0);
-  bladeGrad.addColorStop(0, '#cbd5e1');
-  bladeGrad.addColorStop(0.5, '#f1f5f9');
-  bladeGrad.addColorStop(1, '#e2e8f0');
-  ctx.fillStyle = bladeGrad;
-  ctx.fillRect(10, -2, 50, 4);
-  
-  ctx.fillStyle = '#7c3aed';
-  ctx.fillRect(5, -4, 10, 8);
-  
-  ctx.fillStyle = '#fbbf24';
-  ctx.fillRect(14, -5, 3, 10);
-  
-  ctx.restore();
-
-  // Arms
-  ctx.strokeStyle = '#334155';
-  ctx.lineWidth = 5;
+  // Simple limbs
+  ctx.strokeStyle = 'rgba(14, 22, 51, 0.8)';
+  ctx.lineWidth = 4;
   ctx.lineCap = 'round';
   ctx.beginPath();
-  ctx.moveTo(ninjaX - ninjaRadius * 0.6, ninjaY + ninjaRadius * 0.3);
-  ctx.lineTo(ninjaX - ninjaRadius * 1.2, ninjaY + ninjaRadius * 0.8);
-  ctx.moveTo(ninjaX + ninjaRadius * 0.6, ninjaY + ninjaRadius * 0.3);
-  ctx.lineTo(ninjaX + ninjaRadius * 1.2, ninjaY + ninjaRadius * 0.6);
-  ctx.stroke();
-
-  // Legs
-  ctx.beginPath();
-  ctx.moveTo(ninjaX - ninjaRadius * 0.3, ninjaY + ninjaRadius);
-  ctx.lineTo(ninjaX - ninjaRadius * 0.5, ninjaY + ninjaRadius * 1.8);
-  ctx.moveTo(ninjaX + ninjaRadius * 0.3, ninjaY + ninjaRadius);
-  ctx.lineTo(ninjaX + ninjaRadius * 0.5, ninjaY + ninjaRadius * 1.8);
+  ctx.moveTo(ninjaX - ninjaRadius * 0.5, ninjaY + ninjaRadius * 0.3);
+  ctx.lineTo(ninjaX - ninjaRadius * 1, ninjaY + ninjaRadius * 0.7);
+  ctx.moveTo(ninjaX + ninjaRadius * 0.5, ninjaY + ninjaRadius * 0.3);
+  ctx.lineTo(ninjaX + ninjaRadius * 1, ninjaY + ninjaRadius * 0.7);
+  ctx.moveTo(ninjaX - ninjaRadius * 0.2, ninjaY + ninjaRadius);
+  ctx.lineTo(ninjaX - ninjaRadius * 0.4, ninjaY + ninjaRadius * 1.6);
+  ctx.moveTo(ninjaX + ninjaRadius * 0.2, ninjaY + ninjaRadius);
+  ctx.lineTo(ninjaX + ninjaRadius * 0.4, ninjaY + ninjaRadius * 1.6);
   ctx.stroke();
 
   ctx.restore();
