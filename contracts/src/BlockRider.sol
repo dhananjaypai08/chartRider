@@ -50,12 +50,19 @@ contract BlockRider is ERC721, Ownable, Pausable {
         address auth
     ) internal virtual override returns (address) {
         address from = _ownerOf(_tokenId);
-        require(from != address(0), TokenTranserBlocked());
+        if (from != address(0) && to != address(0)) {
+            revert TokenTranserBlocked();
+        }
 
-        return super._update(to, tokenId, auth);
+        return super._update(to, _tokenId, auth);
     }
 
     function getUserScore(address user) external view returns(uint256 score, uint256 time){
         return (userScore[user].score, userScore[user].time);
     }
+
+    function getUsers() external view returns (address[] memory) {
+        return users;
+    }
+
 }

@@ -4,11 +4,9 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { useAccount, useWriteContract } from 'wagmi';
 import { parseAbi } from 'viem';
+import contractAbi from "../abis/BlockRider.json";
 
-const CONTRACT_ADDRESS = '0x64E3b356f15c93BE5548806E5bbee0AA2f0bf2d5' as const;
-const CONTRACT_ABI = parseAbi([
-  'function safeMint(uint256 time, uint256 score) external',
-]);
+const CONTRACT_ADDRESS = '0x722CEa3909349018E69113227353da768adDb3eB' as const;
 
 interface GameOverModalProps {
   score: number;
@@ -45,7 +43,7 @@ export default function GameOverModal({
     try {
       await writeContract({
         address: CONTRACT_ADDRESS,
-        abi: CONTRACT_ABI,
+        abi: contractAbi,
         functionName: 'safeMint',
         args: [BigInt(time), BigInt(score)],
       });

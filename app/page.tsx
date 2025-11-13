@@ -13,9 +13,9 @@ import { createPublicClient, http, parseAbi } from 'viem';
 
 // ✅ Define outside component (prevents re-creation)
 const KATANA_RPC = 'https://rpc.katana.network';
-const CONTRACT_ADDRESS = '0x64E3b356f15c93BE5548806E5bbee0AA2f0bf2d5' as const;
+const CONTRACT_ADDRESS = '0x722CEa3909349018E69113227353da768adDb3eB' as const;
 const CONTRACT_ABI = parseAbi([
-  'function users() view returns (address[])',
+  'function getUsers() view returns (address[])',
   'function getUserScore(address user) view returns (uint256 score, uint256 time)',
 ]);
 
@@ -46,10 +46,10 @@ export default function Home() {
     const fetchLeaderboard = async () => {
       try {
         setLeaderboardLoading(true);
-        const users: any = await publicClient.readContract({
+        const users = await publicClient.readContract({
           address: CONTRACT_ADDRESS,
           abi: CONTRACT_ABI,
-          functionName: 'users',
+          functionName: 'getUsers',
         });
 
         if (!users || users.length === 0) {
